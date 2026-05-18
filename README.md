@@ -1,5 +1,8 @@
 # MediaWiki MCP Server
 
+[![GitHub](https://img.shields.io/badge/GitHub-Looongting/mediawiki--mcp-blue?logo=github)](https://github.com/Looongting/mediawiki-mcp)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 将 AI 辅助编程（Claude Code）与 MediaWiki 编辑连接起来的 MCP 服务器，实现页面自动读写、服务端渲染验证、浏览器级错误检测和 AI 自动修复闭环。
 
 ## 功能特性
@@ -21,16 +24,22 @@
 
 ### 安装
 
+#### 从 GitHub 安装（推荐）
+
 ```bash
-# 本地安装（推荐开发使用）
-git clone <仓库地址>
+git clone https://github.com/Looongting/mediawiki-mcp.git
 cd mediawiki-mcp
 npm install
 npm run build
-
-# 或全局安装
-npm install -g mediawiki-mcp
 ```
+
+#### 从 npm 安装
+
+> 尚未发布到 npm，待发布后可通过以下命令安装：
+>
+> ```bash
+> npm install -g mediawiki-mcp
+> ```
 
 ### 配置方式
 
@@ -52,7 +61,19 @@ npm install -g mediawiki-mcp
 }
 ```
 
-**方式 B：配置文件**
+> 环境变量也支持别名：`BOT_NAME` / `BOT_PASSWORD` / `WIKI_URL`，会自动映射为标准名。
+
+**方式 B：.env 文件**
+
+在项目根目录放一个 `.env` 文件（参见 `.env.example`），服务器启动时自动加载：
+
+```bash
+MW_URL=https://wiki.example.com
+MW_USERNAME=YourBot@YourBot
+MW_PASSWORD=your-bot-password
+```
+
+**方式 C：配置文件**
 
 将 `config.example.yaml` 复制为项目根目录下的 `mediawiki-mcp.config.yaml`：
 
@@ -70,26 +91,33 @@ safety:
   auto_backup: true
 ```
 
-**方式 C：设置向导**
+**方式 D：设置向导**
 
 ```bash
 npm run setup
 ```
 
-### 添加到 Claude Code
+### 添加到 MCP 客户端
 
-在 `.claude/settings.json`（项目级或用户级）中添加：
+在 MCP 客户端配置（如 `claude_desktop_config.json` 或 `.claude/settings.json`）中添加：
 
 ```json
 {
   "mcpServers": {
     "mediawiki": {
       "command": "node",
-      "args": ["path/to/mediawiki-mcp/dist/index.js"]
+      "args": ["path/to/mediawiki-mcp/dist/index.js"],
+      "env": {
+        "MW_URL": "https://wiki.example.com",
+        "MW_USERNAME": "YourBot@YourBot",
+        "MW_PASSWORD": "your-bot-password"
+      }
     }
   }
 }
 ```
+
+> 如果使用全局安装（`mediawiki-mcp` 命令），可将 `command` 改为 `"mediawiki-mcp"`，去掉 `args`。
 
 ## 可用工具
 
@@ -320,6 +348,22 @@ npx vitest run --coverage
 - `AuthError` — 认证失败
 - `ApiError` — MediaWiki API 错误
 - `BrowserError` — Playwright 浏览器故障
+
+## 分享给他人
+
+本项目托管在 GitHub：[Looongting/mediawiki-mcp](https://github.com/Looongting/mediawiki-mcp)
+
+其他人使用只需三步：
+
+```bash
+git clone https://github.com/Looongting/mediawiki-mcp.git
+cd mediawiki-mcp
+npm install && npm run build
+```
+
+然后在 MCP 客户端中按上方的配置方式填入自己的 Wiki 地址和 Bot 凭据即可。
+
+> 每个使用者需要自己在 Wiki 上申请独立的 Bot 账号，请勿共用凭据。
 
 ## 许可证
 
