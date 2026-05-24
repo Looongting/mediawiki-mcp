@@ -1,8 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListResourcesRequestSchema, ReadResourceRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import type { WikiClientManager } from '../wiki/client-manager.js';
+import type { WikiClient } from '../wiki/api-client.js';
 
-export function registerResources(server: Server, wikiClientManager: WikiClientManager): void {
+export function registerResources(server: Server, wikiClient: WikiClient): void {
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({
     resources: [
       {
@@ -39,13 +39,11 @@ export function registerResources(server: Server, wikiClientManager: WikiClientM
       };
     }
 
-    // wiki://{site}/{page}/wikitext (site optional)
-    const wikitextMatch = uri.match(/^wiki:\/\/(?:([a-zA-Z][a-zA-Z0-9_-]*)\/)?(.+)\/wikitext$/);
+    // wiki://{page}/wikitext
+    const wikitextMatch = uri.match(/^wiki:\/\/(.+)\/wikitext$/);
     if (wikitextMatch) {
-      const site = wikitextMatch[1] || undefined;
-      const page = decodeURIComponent(wikitextMatch[2]);
-      const client = wikiClientManager.getClient(site);
-      const result = await client.readPage(page);
+      const page = decodeURIComponent(wikitextMatch[1]);
+      const result = await wikiClient.readPage(page);
       return {
         contents: [{
           uri,
@@ -55,13 +53,11 @@ export function registerResources(server: Server, wikiClientManager: WikiClientM
       };
     }
 
-    // wiki://{site}/{page}/meta (site optional)
-    const metaMatch = uri.match(/^wiki:\/\/(?:([a-zA-Z][a-zA-Z0-9_-]*)\/)?(.+)\/meta$/);
+    // wiki://{page}/meta
+    const metaMatch = uri.match(/^wiki:\/\/(.+)\/meta$/);
     if (metaMatch) {
-      const site = metaMatch[1] || undefined;
-      const page = decodeURIComponent(metaMatch[2]);
-      const client = wikiClientManager.getClient(site);
-      const result = await client.readPage(page);
+      const page = decodeURIComponent(metaMatch[1]);
+      const result = await wikiClient.readPage(page);
       return {
         contents: [{
           uri,

@@ -1,7 +1,7 @@
 import type { ToolDependencies } from './register.js';
 
-export async function parse(deps: ToolDependencies, args: { page?: string; text?: string; mobile?: boolean; site?: string }) {
-  const wikiClient = deps.wikiClientManager.getClient(args.site);
+export async function parse(deps: ToolDependencies, args: { page?: string; text?: string; mobile?: boolean }) {
+  const { wikiClient } = deps;
   const result = await wikiClient.parseWikitext(args.page, args.text);
 
   const parts: string[] = [

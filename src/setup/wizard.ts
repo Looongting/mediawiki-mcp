@@ -45,16 +45,10 @@ export async function runWizard(): Promise<void> {
   const sandboxFirst = await askYesNo('默认使用沙箱页面？', true);
   const screenshot = await askYesNo('启用截图？', true);
 
-  // Build config (multi-site format)
-  const siteName = url.replace(/https?:\/\//, '').replace(/[^a-zA-Z0-9_-]/g, '_') || 'my-wiki';
-  const config: Record<string, any> = {
-    default_site: siteName,
-    sites: {
-      [siteName]: {
-        url,
-        auth: { type: 'bot', username, password },
-      },
-    },
+  // Build config
+  const config = {
+    wiki: { url },
+    auth: { type: 'bot', username, password },
     validation: {
       screenshot,
       console_errors: true,
@@ -78,19 +72,32 @@ export async function runWizard(): Promise<void> {
 
   const yaml = stringifyYaml(config);
 
-  const configPath = './mediawiki-mcp.config.yaml';
+  const configDir = `${process.env['HOME'] || process.env['USERPROFILE'] || '.'}/.config/mediawiki-mcp`;
+  const configPath = `${configDir}/config.yaml`;
 
+  await mkdir(configDir, { recursive: true });
   await writeFile(configPath, yaml, 'utf-8');
 
   logger.success(`配置已保存到 ${configPath}\n`);
 
   console.log(`
 下一步：
-1. 重新启动 Claude Code（或重新加载 MCP 服务器）
+1. 将以下内容添加到你的 Claude Code 配置中：
 
-2. 尝试调用 wiki_read(page: "首页", site: "${siteName}") 读取一个页面
+   {
+     "mcpServers": {
+       "mediawiki": {
+         "command": "npx",
+         "args": ["-y", "mediawiki-mcp"]
+       }
+     }
+   }
 
-3. 如需添加更多站点，编辑 mediawiki-mcp.config.yaml 在 sites 下追加
+   编辑 ~/.claude/settings.json 或项目的 .claude/settings.json
+
+2. 重新启动 Claude Code
+
+3. 尝试调用 wiki_read 工具读取一个页面
 `);
 }
 

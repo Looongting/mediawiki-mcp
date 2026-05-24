@@ -1,7 +1,7 @@
 import type { ToolDependencies } from './register.js';
 
-export async function read(deps: ToolDependencies, args: { page: string; section?: number; site?: string }) {
-  const wikiClient = deps.wikiClientManager.getClient(args.site);
+export async function read(deps: ToolDependencies, args: { page: string; section?: number }) {
+  const { wikiClient } = deps;
   const result = await wikiClient.readPage(args.page);
 
   if (!result.exists) {

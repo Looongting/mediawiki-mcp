@@ -9,11 +9,8 @@ export async function validate(deps: ToolDependencies, args: {
   screenshot?: boolean;
   browser?: boolean;
   rules?: string[];
-  site?: string;
 }) {
-  const { wikiClientManager, browserManager, config } = deps;
-  const wikiClient = wikiClientManager.getClient(args.site);
-  const siteConfig = wikiClientManager.getSiteConfig(args.site);
+  const { wikiClient, browserManager, config } = deps;
   const detector = new ErrorDetector(config.validation.custom_rules, config.validation.console_ignore);
 
   const targetPage = args.page || '(inline text)';
@@ -66,7 +63,7 @@ export async function validate(deps: ToolDependencies, args: {
   const useBrowser = args.browser !== false && config.validation.console_errors;
   if (useBrowser) {
     try {
-      const pageUrl = `${siteConfig.url}/index.php?title=${encodeURIComponent(args.page || '')}`;
+      const pageUrl = `${config.wiki.url}/index.php?title=${encodeURIComponent(args.page || '')}`;
       const captureResult = await browserManager.capturePage(pageUrl, {
         screenshot: args.screenshot !== false && config.validation.screenshot,
         waitMs: config.validation.wait_after_load,

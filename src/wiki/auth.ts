@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { SiteConfig } from '../types.js';
+import type { AuthConfig, WikiConfig } from '../types.js';
 import { AuthError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 import { fetchWithRetry } from '../utils/network.js';
@@ -16,7 +16,7 @@ export class AuthManager {
   private _isAuthenticated = false;
 
   constructor(
-    private readonly config: SiteConfig
+    private readonly config: { wiki: WikiConfig; auth: AuthConfig }
   ) {}
 
   get isAuthenticated(): boolean {
@@ -79,10 +79,6 @@ export class AuthManager {
         throw new AuthError('OAuth not yet implemented');
       case 'cookie':
         throw new AuthError('Cookie auth not yet implemented');
-      case 'none':
-        this._isAuthenticated = true;
-        logger.info('Using fake session (read-only mode, no login)');
-        return; // skip CSRF token fetch
     }
 
     await this.fetchCsrfToken();
@@ -92,7 +88,7 @@ export class AuthManager {
 
   private async loginWithBotPassword(username: string, password: string): Promise<void> {
     // Step 1: Get login token with fake SESSDATA + session cookies
-    const tokenUrl = `${this.config.api}?action=query&meta=tokens&type=login&format=json`;
+    const tokenUrl = `${this.config.wiki.api}?action=query&meta=tokens&type=login&format=json`;
     const tokenResp = await fetchWithRetry(tokenUrl, {
       method: 'GET',
       headers: { Cookie: this.cookieHeader },
@@ -105,7 +101,7 @@ export class AuthManager {
     this.mergeCookies(tokenResp.headers.getSetCookie?.() || []);
 
     // Step 2: Login with our cookies (including fake SESSDATA)
-    const loginResp = await fetchWithRetry(`${this.config.api}?action=login&format=json`, {
+    const loginResp = await fetchWithRetry(`${this.config.wiki.api}?action=login&format=json`, {
       body: new URLSearchParams({ lgname: username, lgpassword: password, lgtoken: loginToken }),
       headers: { Cookie: this.cookieHeader },
     });
@@ -122,7 +118,7 @@ export class AuthManager {
   }
 
   private async fetchCsrfToken(): Promise<void> {
-    const resp = await fetchWithRetry(`${this.config.api}?action=query&meta=tokens&format=json`, {
+    const resp = await fetchWithRetry(`${this.config.wiki.api}?action=query&meta=tokens&format=json`, {
       method: 'GET',
       headers: { Cookie: this.cookieHeader },
     });

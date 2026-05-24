@@ -1,36 +1,18 @@
-# MediaWiki MCP Server 配置示例（多站点格式）
-# 复制此文件为 mediawiki-mcp.config.yaml 并填写你的 Wiki 站点信息
+# MediaWiki MCP Server 配置
+# 复制此文件为 mediawiki-mcp.config.yaml 并填写你的 Wiki 信息
 
-# 默认站点名称（不指定 site 参数时使用的站点）
-default_site: my-wiki
+wiki:
+  url: https://wiki.example.com
+  # api: https://wiki.example.com/api.php  # 可选，默认使用 wiki.url/api.php
 
-# 多站点配置：可配置任意数量的站点
-sites:
-  my-wiki:
-    url: https://wiki.example.com
-    # api: https://wiki.example.com/api.php  # 可选，默认使用 url/api.php
-    auth:
-      # 推荐在 https://www.mediawiki.org/wiki/Special:BotPasswords 创建 Bot 密码
-      type: bot
-      username: YourBot@YourBot
-      password: your-bot-password
-
-  # 第二个站点（示例）
-  # another-wiki:
-  #   url: https://wiki.biligame.com/another
-  #   auth:
-  #     type: bot
-  #     username: YourBot@YourBot
-  #     password: another-bot-password
-
-  # 只读站点（无需 bot 密码，仅可读取）
-  # reference-wiki:
-  #   url: https://wiki.example.com/reference
-  #   auth:
-  #     type: none
+auth:
+  # 推荐在 https://www.mediawiki.org/wiki/Special:BotPasswords 创建 Bot 密码
+  type: bot
+  username: YourBot@YourBot
+  password: your-bot-password
 
 validation:
-  screenshot: true          # 验证时是否截图
+  screenshot: true          # 浏览器验证时是否截图
   console_errors: true      # 捕获浏览器控制台错误日志
   network_errors: true      # 捕获失败的 HTTP 请求
   smw_errors: true          # 检测渲染 HTML 中的语义 MediaWiki 错误
@@ -41,7 +23,7 @@ validation:
   # 它们输出的日志是正常噪音，不表示页面有错误。
   # 把无关节目的特征文本写进来，验证报告会更干净。
   console_ignore:
-    - "^Widget:.*版載入$"          # 小工具加载日志（示例）
+    - "^Widget:.*版载入$"          # 小工具加载日志（示例）
     - "Material Symbols"           # 图标库加载（示例）
     - "^页面浏览量"                 # PV 统计（示例）
   # ↑ 以上只是示例，请根据你站点的实际控制台输出来调整

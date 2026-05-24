@@ -1,4 +1,4 @@
-import type { SiteConfig, PageInfo, ParseResult, EditResult, SearchResult, RevisionEntry } from '../types.js';
+import type { AppConfig, PageInfo, ParseResult, EditResult, SearchResult, RevisionEntry } from '../types.js';
 import { AuthManager } from './auth.js';
 import { ApiError } from '../utils/errors.js';
 import { fetchWithRetry } from '../utils/network.js';
@@ -7,12 +7,12 @@ import { logger } from '../utils/logger.js';
 export class WikiClient {
   private auth: AuthManager;
 
-  constructor(private config: SiteConfig) {
-    this.auth = new AuthManager(config);
+  constructor(private config: AppConfig) {
+    this.auth = new AuthManager({ wiki: config.wiki, auth: config.auth });
   }
 
   get apiUrl(): string {
-    return this.config.api;
+    return this.config.wiki.api;
   }
 
   get authManager(): AuthManager {
