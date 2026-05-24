@@ -2,5 +2,7 @@ node_modules/
 dist/
 .wiki-backups/
 .env
+mediawiki-mcp.config.yaml
+*.local.yaml
 *.log
 .DS_Store
