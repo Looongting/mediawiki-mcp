@@ -70,27 +70,7 @@ safety:
   auto_backup: true
 ```
 
-**方式 B：环境变量**
-
-适用于单站点快速测试场景：
-
-```json
-{
-  "mcpServers": {
-    "mediawiki": {
-      "command": "node",
-      "args": ["path/to/mediawiki-mcp/dist/index.js"],
-      "env": {
-        "MW_URL": "https://wiki.example.com",
-        "MW_USERNAME": "YourBot@YourBot",
-        "MW_PASSWORD": "your-bot-password"
-      }
-    }
-  }
-}
-```
-
-**方式 C：设置向导**
+**方式 B：设置向导**
 
 ```bash
 npm run setup
