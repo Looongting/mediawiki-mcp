@@ -43,7 +43,36 @@ npm run build
 
 ### 配置方式
 
-**方式 A：环境变量**
+**方式 A：配置文件（推荐）**
+
+将 `config.example.yaml` 复制为项目根目录下的 `mediawiki-mcp.config.yaml`：
+
+```yaml
+default_site: mywiki
+
+sites:
+  mywiki:
+    url: https://wiki.example.com
+    auth:
+      type: bot
+      username: YourBot@YourBot
+      password: your-bot-password
+
+  another:
+    url: https://another.wiki.com
+    auth:
+      type: bot
+      username: AnotherBot@AnotherBot
+      password: another-bot-password
+
+safety:
+  sandbox_first: true
+  auto_backup: true
+```
+
+**方式 B：环境变量**
+
+适用于单站点快速测试场景：
 
 ```json
 {
@@ -61,37 +90,7 @@ npm run build
 }
 ```
 
-> 环境变量也支持别名：`BOT_NAME` / `BOT_PASSWORD` / `WIKI_URL`，会自动映射为标准名。
-
-**方式 B：.env 文件**
-
-在项目根目录放一个 `.env` 文件（参见 `.env.example`），服务器启动时自动加载：
-
-```bash
-MW_URL=https://wiki.example.com
-MW_USERNAME=YourBot@YourBot
-MW_PASSWORD=your-bot-password
-```
-
-**方式 C：配置文件**
-
-将 `config.example.yaml` 复制为项目根目录下的 `mediawiki-mcp.config.yaml`：
-
-```yaml
-wiki:
-  url: https://wiki.example.com
-
-auth:
-  type: bot
-  username: YourBot@YourBot
-  password: your-bot-password
-
-safety:
-  sandbox_first: true
-  auto_backup: true
-```
-
-**方式 D：设置向导**
+**方式 C：设置向导**
 
 ```bash
 npm run setup
@@ -99,25 +98,20 @@ npm run setup
 
 ### 添加到 MCP 客户端
 
-在 MCP 客户端配置（如 `claude_desktop_config.json` 或 `.claude/settings.json`）中添加：
+在 MCP 客户端配置（如 `claude_desktop_config.json` 或 `.claude/settings.json`）中指向项目目录：
 
 ```json
 {
   "mcpServers": {
     "mediawiki": {
       "command": "node",
-      "args": ["path/to/mediawiki-mcp/dist/index.js"],
-      "env": {
-        "MW_URL": "https://wiki.example.com",
-        "MW_USERNAME": "YourBot@YourBot",
-        "MW_PASSWORD": "your-bot-password"
-      }
+      "args": ["path/to/mediawiki-mcp/dist/index.js"]
     }
   }
 }
 ```
 
-> 如果使用全局安装（`mediawiki-mcp` 命令），可将 `command` 改为 `"mediawiki-mcp"`，去掉 `args`。
+服务器启动时会自动读取项目根目录下的 `mediawiki-mcp.config.yaml`。如果使用全局安装（`mediawiki-mcp` 命令），可将 `command` 改为 `"mediawiki-mcp"`，去掉 `args`。详见 [config.example.yaml](config.example.yaml)。
 
 ## 可用工具
 
@@ -266,35 +260,37 @@ validation:
 
 ## 配置参考
 
-完整配置项见 `config.example.yaml`：
+完整配置项见 [config.example.yaml](config.example.yaml)：
 
 ```yaml
-wiki:
-  url: https://wiki.example.com           # 必填
-  api: https://wiki.example.com/api.php   # 可选，默认从 url 自动推导
+default_site: mywiki                      # 默认目标站点
 
-auth:
-  type: bot                                # 目前仅实现 "bot" 模式
-  username: YourBot@YourBot               # Bot 用户名
-  password: your-bot-password              # Bot 密码
+sites:                                    # 多站点配置
+  mywiki:
+    url: https://wiki.example.com         # 站点地址
+    api: https://wiki.example.com/api.php # API 地址（可选，自动推导）
+    auth:
+      type: bot                           # 目前仅实现 "bot" 模式
+      username: YourBot@YourBot           # Bot 用户名
+      password: your-bot-password          # Bot 密码
 
 validation:
-  screenshot: true                         # 验证时是否截图
-  console_errors: true                     # 捕获浏览器控制台错误
-  network_errors: true                     # 捕获失败的网络请求
-  smw_errors: true                         # 检测渲染 HTML 中的 SMW 错误
-  wait_after_load: 3000                    # 页面加载后等待时间（毫秒）
-  console_ignore: []                       # 从控制台日志中过滤的正则模式
-  custom_rules: []                         # 自定义检测规则
+  screenshot: true                        # 验证时是否截图
+  console_errors: true                    # 捕获浏览器控制台错误
+  network_errors: true                    # 捕获失败的网络请求
+  smw_errors: true                        # 检测渲染 HTML 中的 SMW 错误
+  wait_after_load: 3000                   # 页面加载后等待时间（毫秒）
+  console_ignore: []                      # 从控制台日志中过滤的正则模式
+  custom_rules: []                        # 自定义检测规则
 
 safety:
-  sandbox_first: false                     # 编辑是否默认使用沙箱
+  sandbox_first: false                    # 编辑是否默认使用沙箱
   sandbox_page: "User:${username}/Sandbox" # 沙箱页面模板
-  auto_backup: true                        # 编辑前自动备份
-  max_edits_per_minute: 10                 # 编辑频率限制
+  auto_backup: true                       # 编辑前自动备份
+  max_edits_per_minute: 10                # 编辑频率限制
 
 browser:
-  headless: true                           # 无头模式
+  headless: true                          # 无头模式
   viewport:
     width: 1280
     height: 720
