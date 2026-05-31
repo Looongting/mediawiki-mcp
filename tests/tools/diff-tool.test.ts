@@ -28,7 +28,10 @@ describe('wiki_diff 工具', () => {
   it('不存在的修订版本应返回错误', async () => {
     const deps = mockDeps({
       wikiClient: {
-        getHistory: vi.fn().mockResolvedValue([{ revision: 5, timestamp: '', user: '', comment: '', minor: false }]),
+        getHistory: vi.fn().mockResolvedValue({
+          items: [{ revision: 5, timestamp: '', user: '', comment: '', minor: false }],
+          has_more: false,
+        }),
       },
     });
 

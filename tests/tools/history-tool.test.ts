@@ -14,26 +14,73 @@ describe('wiki_history 工具', () => {
   });
 
   it('小编辑应被标记', async () => {
-    const deps = mockDeps();
-    const result = await history(deps, { page: 'TestPage' });
+    const deps = mockDeps({
+      wikiClient: {
+        getHistory: vi.fn().mockResolvedValue({
+          items: [
+            { revision: 3, timestamp: '2026-05-31T00:00:00Z', user: 'TestBot', comment: 'minor fix', minor: true },
+          ],
+          has_more: false,
+        }),
+      },
+    });
 
-    // 默认 mock 里有 minor: false，不标小编辑；换一个有 minor: true 的
+    const result = await history(deps, { page: 'TestPage' });
+    expect(result.content[0].text).toContain('(小编辑)');
   });
 
   it('无历史时应返回对应消息', async () => {
     const deps = mockDeps({
-      wikiClient: { getHistory: vi.fn().mockResolvedValue([]) },
+      wikiClient: {
+        getHistory: vi.fn().mockResolvedValue({ items: [], has_more: false }),
+      },
     });
 
     const result = await history(deps, { page: 'NewPage' });
     expect(result.content[0].text).toContain('没有修订历史');
   });
 
-  it('应传递 limit 参数', async () => {
-    const deps = mockDeps();
-    await history(deps, { page: 'TestPage', limit: 5 });
+  it('有更多记录时应显示分页游标', async () => {
+    const deps = mockDeps({
+      wikiClient: {
+        getHistory: vi.fn().mockResolvedValue({
+          items: [
+            { revision: 2, timestamp: '2026-05-31T00:00:00Z', user: 'TestBot', comment: 'test', minor: false },
+          ],
+          has_more: true,
+          continue_cursor: '{"rvcontinue":"20260531000000|2","continue":"-||"}',
+        }),
+      },
+    });
 
-    const mc = deps.wikiClientManager.getClient();
-    expect(mc.getHistory).toHaveBeenCalledWith('TestPage', 5);
+    const result = await history(deps, { page: 'TestPage' });
+    expect(result.content[0].text).toContain('还有更多');
+    expect(result.content[0].text).toContain('续传游标');
+  });
+
+  it('应传递 limit 参数', async () => {
+    const mockGetHistory = vi.fn().mockResolvedValue({
+      items: [
+        { revision: 2, timestamp: '2026-05-31T00:00:00Z', user: 'TestBot', comment: 'test', minor: false },
+      ],
+      has_more: false,
+    });
+    const deps = mockDeps({ wikiClient: { getHistory: mockGetHistory } });
+
+    await history(deps, { page: 'TestPage', limit: 5 });
+    expect(mockGetHistory).toHaveBeenCalledWith('TestPage', 5, undefined);
+  });
+
+  it('应传递 offset 参数', async () => {
+    const mockGetHistory = vi.fn().mockResolvedValue({
+      items: [
+        { revision: 1, timestamp: '2026-05-30T00:00:00Z', user: 'OldBot', comment: '', minor: false },
+      ],
+      has_more: false,
+    });
+    const deps = mockDeps({ wikiClient: { getHistory: mockGetHistory } });
+
+    await history(deps, { page: 'TestPage', offset: '{"rvcontinue":"abc"}' });
+    expect(mockGetHistory).toHaveBeenCalledWith('TestPage', undefined, '{"rvcontinue":"abc"}');
   });
 });

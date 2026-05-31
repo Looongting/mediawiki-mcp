@@ -71,11 +71,50 @@ export function makeMockWikiClient(overrides: Record<string, any> = {}) {
       modules: [],
       errors: [],
     }),
-    searchPages: vi.fn().mockResolvedValue([]),
-    getHistory: vi.fn().mockResolvedValue([
-      { revision: 2, timestamp: '2026-05-31T00:00:00Z', user: 'TestBot', comment: 'test', minor: false },
-    ]),
+    searchPages: vi.fn().mockResolvedValue({
+      items: [],
+      has_more: false,
+    }),
+    getHistory: vi.fn().mockResolvedValue({
+      items: [
+        { revision: 2, timestamp: '2026-05-31T00:00:00Z', user: 'TestBot', comment: 'test', minor: false },
+      ],
+      has_more: false,
+    }),
+    batchReadPages: vi.fn().mockResolvedValue({
+      pages: [],
+      missing_count: 0,
+    }),
+    getCategoryMembers: vi.fn().mockResolvedValue({
+      members: [],
+      has_more: false,
+    }),
     revertPage: vi.fn().mockResolvedValue({ success: true }),
+    getRevision: vi.fn().mockResolvedValue({
+      revision: 1,
+      page_title: 'Test',
+      content: 'test content',
+      timestamp: '2026-05-31T00:00:00Z',
+      user: 'TestBot',
+      comment: 'test',
+      minor: false,
+    }),
+    prefixSearch: vi.fn().mockResolvedValue({
+      items: [],
+      has_more: false,
+    }),
+    getRecentChanges: vi.fn().mockResolvedValue({
+      items: [],
+      has_more: false,
+    }),
+    getFile: vi.fn().mockResolvedValue({
+      filename: 'File:Test.png',
+      url: 'https://example.com/test.png',
+      description_url: 'https://wiki.example.com/File:Test.png',
+      exists: true,
+    }),
+    deletePage: vi.fn().mockResolvedValue({ success: true, message: '页面已删除。' }),
+    undeletePage: vi.fn().mockResolvedValue({ success: true, message: '页面已恢复。' }),
     ensureAuthenticated: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };

@@ -1,4 +1,5 @@
 import type { ToolDependencies } from './register.js';
+import { truncateContent, truncationNote } from '../utils/content-limiter.js';
 
 export async function read(deps: ToolDependencies, args: { page: string; section?: number; site?: string }) {
   const wikiClient = deps.wikiClientManager.getClient(args.site);
@@ -19,14 +20,19 @@ export async function read(deps: ToolDependencies, args: { page: string; section
     }
   }
 
+  // Content size truncation (UTF-8 safe)
+  const { content: displayContent, truncated, originalBytes } = truncateContent(content);
+
   const meta = `页面: ${result.title}
 修订版本: ${result.last_revision}
-长度: ${content.length} 字符
+长度: ${displayContent.length} 字符
 --- 内容开始 ---
 
 `;
 
+  const note = truncated ? truncationNote(originalBytes) : '';
+
   return {
-    content: [{ type: 'text', text: meta + content }],
+    content: [{ type: 'text', text: meta + displayContent + note }],
   };
 }

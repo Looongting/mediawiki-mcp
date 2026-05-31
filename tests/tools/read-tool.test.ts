@@ -54,4 +54,49 @@ describe('read 工具', () => {
     expect(result.content[0].text).toContain('Section 2');
     expect(result.content[0].text).toContain('content2');
   });
+
+  it('内容超过 MCP_CONTENT_MAX_BYTES 时应截断', async () => {
+    vi.stubEnv('MCP_CONTENT_MAX_BYTES', '100');
+    const bigContent = 'x'.repeat(5000);
+
+    const deps = mockDeps({
+      wikiClient: {
+        readPage: vi.fn().mockResolvedValue({
+          title: 'BigPage',
+          content: bigContent,
+          exists: true,
+          last_revision: 1,
+        }),
+      },
+    });
+
+    const result = await read(deps, { page: 'BigPage' });
+    expect(result.content[0].text).toContain('内容已截断');
+    expect(result.content[0].text).toContain('原始大小');
+    expect(result.content[0].text.length).toBeLessThan(bigContent.length + 100);
+
+    vi.unstubAllEnvs();
+  });
+
+  it('内容未超过限制时应完整返回', async () => {
+    vi.stubEnv('MCP_CONTENT_MAX_BYTES', '100000');
+    const smallContent = 'small content';
+
+    const deps = mockDeps({
+      wikiClient: {
+        readPage: vi.fn().mockResolvedValue({
+          title: 'SmallPage',
+          content: smallContent,
+          exists: true,
+          last_revision: 1,
+        }),
+      },
+    });
+
+    const result = await read(deps, { page: 'SmallPage' });
+    expect(result.content[0].text).not.toContain('内容已截断');
+    expect(result.content[0].text).toContain('small content');
+
+    vi.unstubAllEnvs();
+  });
 });

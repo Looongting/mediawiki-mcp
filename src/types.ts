@@ -65,8 +65,16 @@ export interface PageInfo {
 
 export interface ParseResult {
   html: string;
+  /** Rendered page title (may differ from input for displaytitle magic words) */
+  displaytitle?: string;
   categories: string[];
   modules: string[];
+  /** Templates used in the page (title → ns mapping) */
+  templates: string[];
+  /** Images used in the page */
+  images: string[];
+  /** Parser warnings (non-fatal issues) */
+  parsewarnings: string[];
   errors: ParseError[];
 }
 
@@ -153,6 +161,40 @@ export interface BrowserCaptureResult {
   dom_snapshot?: string;
 }
 
+// ─── Batch Read ───────────────────────────────────────────────
+export interface BatchPageResult {
+  title: string;
+  content: string;
+  exists: boolean;
+  last_revision: number;
+}
+
+export interface BatchReadResult {
+  pages: BatchPageResult[];
+  missing_count: number;
+}
+
+// ─── Category Members ─────────────────────────────────────────
+export interface CategoryMember {
+  title: string;
+  page_id: number;
+  ns: number;
+  sortkey?: string;
+}
+
+export interface CategoryMembersResult {
+  members: CategoryMember[];
+  has_more: boolean;
+  continue_cursor?: string;
+}
+
+// ─── Unified Pagination ───────────────────────────────────────
+export interface PaginatedResult<T> {
+  items: T[];
+  has_more: boolean;
+  continue_cursor?: string;
+}
+
 // ─── MCP Tool Inputs ──────────────────────────────────────────
 export interface ReadInput {
   page: string;
@@ -180,6 +222,8 @@ export interface EditInput {
 export interface ParseInput {
   page?: string;
   text?: string;
+  /** 解析文本时使用的虚拟页面标题（帮助解析器正确处理相对链接和模板参数，不影响实际页面） */
+  title?: string;
   mobile?: boolean;
   site?: string;
 }
@@ -215,12 +259,6 @@ export interface DiffInput {
   site?: string;
 }
 
-export interface HistoryInput {
-  page: string;
-  limit?: number;
-  site?: string;
-}
-
 export interface RevertInput {
   page: string;
   revision: number;
@@ -232,5 +270,118 @@ export interface SearchInput {
   query: string;
   limit?: number;
   namespace?: number;
+  offset?: string;
   site?: string;
+}
+
+export interface HistoryInput {
+  page: string;
+  limit?: number;
+  offset?: string;
+  site?: string;
+}
+
+export interface BatchReadInput {
+  pages: string[];
+  site?: string;
+}
+
+export interface CategoryMembersInput {
+  category: string;
+  limit?: number;
+  offset?: string;
+  site?: string;
+}
+
+// ─── P1: New tool types ─────────────────────────────────────────
+
+export interface RevisionResult {
+  revision: number;
+  page_title: string;
+  content: string;
+  timestamp: string;
+  user: string;
+  comment: string;
+  minor: boolean;
+}
+
+export interface GetRevisionInput {
+  page?: string;
+  revision: number;
+  site?: string;
+}
+
+export interface FileInfo {
+  filename: string;
+  url: string;
+  description_url: string;
+  size_bytes?: number;
+  width?: number;
+  height?: number;
+  mime?: string;
+  uploader?: string;
+  uploaded_at?: string;
+  exists: boolean;
+}
+
+export interface GetFileInput {
+  filename: string;
+  site?: string;
+}
+
+export interface RecentChange {
+  title: string;
+  page_id: number;
+  revision: number;
+  type: 'edit' | 'new' | 'log' | 'categorize' | 'external';
+  user: string;
+  timestamp: string;
+  comment: string;
+  minor: boolean;
+  bot: boolean;
+  new_page: boolean;
+  ns: number;
+  old_revision: number;
+}
+
+export interface RecentChangesInput {
+  limit?: number;
+  namespace?: number;
+  user?: string;
+  type?: string;
+  offset?: string;
+  site?: string;
+}
+
+export interface DeletePageInput {
+  page: string;
+  reason?: string;
+  confirm: boolean;
+  site?: string;
+}
+
+export interface UndeletePageInput {
+  page: string;
+  reason?: string;
+  confirm: boolean;
+  site?: string;
+}
+
+export interface UploadFileInput {
+  filename: string;
+  /** 本地文件路径（与 file_url 二选一） */
+  file_path?: string;
+  /** 远程文件 URL（与 file_path 二选一） */
+  file_url?: string;
+  comment?: string;
+  /** 文件描述页面内容（可选） */
+  text?: string;
+  site?: string;
+}
+
+export interface UploadFileResult {
+  success: boolean;
+  filename: string;
+  url?: string;
+  message: string;
 }

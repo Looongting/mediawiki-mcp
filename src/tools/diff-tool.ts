@@ -18,7 +18,7 @@ export async function diff(deps: ToolDependencies, args: { page: string; from_re
   // If from_revision is specified, verify it exists
   if (args.from_revision) {
     const history = await wikiClient.getHistory(args.page, 50);
-    const revExists = history.some(h => h.revision === args.from_revision);
+    const revExists = history.items.some((h) => h.revision === args.from_revision);
     if (!revExists) {
       return {
         content: [{ type: 'text', text: `修订版本 ${args.from_revision} 未找到` }],
