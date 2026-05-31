@@ -162,7 +162,13 @@ export interface ReadInput {
 
 export interface EditInput {
   page: string;
-  content: string;
+  content?: string;
+  /** 要在页面中查找的文本（与 new_string 配合，执行查找替换） */
+  old_string?: string;
+  /** 替换后的文本（与 old_string 配合） */
+  new_string?: string;
+  /** 替换所有匹配项（默认 false，仅替换首个） */
+  replace_all?: boolean;
   summary?: string;
   minor?: boolean;
   bot?: boolean;

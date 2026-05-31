@@ -32,12 +32,15 @@ export function registerTools(server: Server, deps: ToolDependencies): void {
       },
       {
         name: 'wiki_edit',
-        description: '创建或更新 MediaWiki 页面。支持 dry_run（仅预览差异不保存）和 sandbox（发布到沙箱页面）模式。使用 site 参数指定目标站点。',
+        description: '创建或更新 MediaWiki 页面。支持两种模式：（1）content 全页替换；（2）old_string + new_string 查找替换。支持 dry_run（仅预览差异不保存）和 sandbox（发布到沙箱页面）模式。使用 site 参数指定目标站点。',
         inputSchema: {
           type: 'object',
           properties: {
             page: { type: 'string', description: '页面标题' },
-            content: { type: 'string', description: '新的 Wikitext 内容' },
+            content: { type: 'string', description: '新的 Wikitext 内容（全页替换模式）。如果提供此参数，则忽略 old_string/new_string' },
+            old_string: { type: 'string', description: '要在页面中查找的文本（查找替换模式，与 new_string 配合使用）' },
+            new_string: { type: 'string', description: '替换后的文本（查找替换模式，与 old_string 配合使用）' },
+            replace_all: { type: 'boolean', description: '替换所有匹配项（默认 false，仅替换首个匹配）' },
             summary: { type: 'string', description: '编辑摘要' },
             minor: { type: 'boolean', description: '标记为小编辑' },
             bot: { type: 'boolean', description: '标记为机器人编辑（默认 true）' },
@@ -45,7 +48,7 @@ export function registerTools(server: Server, deps: ToolDependencies): void {
             sandbox: { type: 'boolean', description: '发布到沙箱页面而非真实页面' },
             site: { type: 'string', description: '目标站点名称，留空使用默认站点' },
           },
-          required: ['page', 'content'],
+          required: ['page'],
         },
       },
       {
