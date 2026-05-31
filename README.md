@@ -8,12 +8,15 @@
 
 ## 功能特性
 
-- **读写 Wiki 页面** — AI 通过 `wiki_read` / `wiki_edit` 直接读写 MediaWiki 页面
-- **服务端解析** — 渲染 Wikitext 并检测模板、SMW、解析器错误
+- **读写 Wiki 页面** — AI 通过 `wiki_read` / `wiki_edit` 直接读写 MediaWiki 页面，支持查找替换模式
+- **批量操作** — `wiki_batch_read` 一次读取最多 50 页，`wiki_category_members` 遍历分类体系
+- **文件管理** — `wiki_upload_file` 支持 URL 和本地路径上传，`wiki_get_file` 查询文件信息
+- **服务端解析** — 渲染 Wikitext 并检测模板、SMW、解析器错误和警告
 - **浏览器验证** — 基于 Playwright 的控制台错误、网络请求失败、截图捕获
 - **SMW 查询** — 执行语义 MediaWiki 查询（`#ask` 解析器函数或 API）
-- **安全机制** — 沙箱模式、干运行差异预览、自动备份、修订历史
+- **安全机制** — 沙箱模式、干运行差异预览、自动备份、删除/恢复二次确认
 - **AI 反馈闭环** — AI 自动编排：编辑 → 验证 → 修复 → 重新验证直至通过
+- **多站点管理** — 一份配置管理多个 Wiki，`wiki_list_wikis` 检测连通性
 
 ## 快速开始
 
@@ -110,38 +113,66 @@ npm run setup
 | 工具 | 描述 | 关键参数 |
 |------|------|---------|
 | `wiki_read` | 读取页面的原始 Wikitext | `page`, `section` |
-| `wiki_edit` | 创建或更新页面 | `page`, `content`, `summary`, `dry_run`, `sandbox` |
-| `wiki_parse` | 将 Wikitext 解析为渲染后的 HTML | `page`, `text`, `mobile` |
+| `wiki_batch_read` | 批量读取多个页面（最多 50） | `pages[]` |
+| `wiki_edit` | 创建或更新页面（含查找替换） | `page`, `content`, `old_string`, `new_string`, `dry_run`, `sandbox` |
+| `wiki_parse` | 将 Wikitext 解析为 HTML，检测错误/警告 | `page`, `text`, `title` |
 | `wiki_validate` | 完整验证：解析 + 浏览器 + 截图 | `page`, `text`, `screenshot`, `browser`, `rules` |
+| `wiki_autofix` | 自动修复闭环：沙箱 → 验证 → 修复 | `page`, `content`, `iteration`, `max_iterations` |
 | `wiki_browser_capture` | 浏览器捕获：控制台、网络、截图 | `page`, `wait_ms`, `screenshot`, `full_page` |
-| `wiki_search` | 搜索页面 | `query`, `limit`, `namespace` |
+| `wiki_search` | 搜索页面（全文 + 前缀） | `query`, `mode`, `limit`, `namespace`, `offset` |
 | `wiki_smw_query` | 执行 SMW 查询 | `query`, `format`, `limit` |
 | `wiki_diff` | 显示版本差异 | `page`, `from_revision`, `to_content` |
-| `wiki_history` | 获取修订历史 | `page`, `limit` |
+| `wiki_history` | 获取修订历史 | `page`, `limit`, `offset` |
 | `wiki_revert` | 回滚到指定版本 | `page`, `revision`, `summary` |
+| `wiki_get_revision` | 获取指定修订的详细信息 | `revision`, `page` |
+| `wiki_recent_changes` | 获取全站最近更改 | `limit`, `namespace`, `user`, `type`, `offset` |
+| `wiki_category_members` | 列出分类下的成员页面 | `category`, `limit`, `offset` |
+| `wiki_get_file` | 获取已上传文件信息 | `filename` |
+| `wiki_upload_file` | 上传文件（URL 或本地路径） | `filename`, `file_url`, `file_path`, `comment`, `text` |
+| `wiki_delete_page` | 删除页面（需二次确认） | `page`, `reason`, `confirm` |
+| `wiki_undelete_page` | 恢复已删除页面（需二次确认） | `page`, `reason`, `confirm` |
+| `wiki_list_wikis` | 列出已配置站点及连通性 | `check` |
+
+> 所有工具均支持 `site` 参数切换目标站点。
 
 ## 使用示例
 
 ### 基本读写
 
 ```
-读取页面 → wiki_read(page: "Main Page")
-编辑页面 → wiki_edit(page: "Sandbox/Test", content: "== Hello ==\n新内容")
-仅预览  → wiki_edit(page: "Sandbox/Test", content: "...", dry_run: true)
-沙箱模式 → wiki_edit(page: "ProductionPage", content: "...", sandbox: true)
+读取页面  → wiki_read(page: "Main Page")
+批量读取  → wiki_batch_read(pages: ["A", "B", "C"])
+编辑页面  → wiki_edit(page: "Sandbox", content: "== Hello ==\n新内容")
+查找替换  → wiki_edit(page: "Sandbox", old_string: "旧文本", new_string: "新文本")
+仅预览   → wiki_edit(page: "Sandbox", content: "...", dry_run: true)
+沙箱模式  → wiki_edit(page: "Production", content: "...", sandbox: true)
 ```
 
-### 验证流程
+### 解析与验证
 
 ```
-1. 解析 → wiki_parse(page: "MyPage")
-   → 检测 SMW 错误、模板错误、解析器错误
+解析文本  → wiki_parse(text: "{{Template|p=v}}")
+解析页面  → wiki_parse(page: "MyPage")
+自动修复  → wiki_autofix(page: "MyPage", content: "...")
+浏览器验证 → wiki_validate(page: "MyPage", browser: true)
+```
 
-2. 浏览器验证 → wiki_validate(page: "MyPage", browser: true)
-   → 解析错误 + 控制台错误 + 网络错误 + 截图
+### 文件操作
 
-3. 仅浏览器捕获 → wiki_browser_capture(page: "https://...")
-   → 完整控制台日志、网络请求、页面截图
+```
+文件信息  → wiki_get_file(filename: "Example.png")
+URL上传   → wiki_upload_file(filename: "Pic.png", file_url: "https://...")
+本地上传  → wiki_upload_file(filename: "Pic.png", file_path: "/tmp/pic.png")
+```
+
+### 浏览与探索
+
+```
+搜索     → wiki_search(query: "关键词", mode: "text")
+前缀搜索  → wiki_search(query: "Template:", mode: "prefix")
+分类浏览  → wiki_category_members(category: "工具")
+最近更改  → wiki_recent_changes(type: "edit", limit: 20)
+站点列表  → wiki_list_wikis()
 ```
 
 ### SMW 查询
@@ -153,9 +184,12 @@ npm run setup
 ### 版本管理
 
 ```
-查看历史 → wiki_history(page: "MyPage", limit: 10)
-显示差异 → wiki_diff(page: "MyPage", to_content: "新的 wikitext")
-回滚    → wiki_revert(page: "MyPage", revision: 12345)
+查看历史  → wiki_history(page: "MyPage", limit: 10)
+修订详情  → wiki_get_revision(revision: 12345)
+显示差异  → wiki_diff(page: "MyPage", to_content: "新的 wikitext")
+回滚     → wiki_revert(page: "MyPage", revision: 12345)
+删除页面  → wiki_delete_page(page: "Obsolete", confirm: true)
+恢复页面  → wiki_undelete_page(page: "Obsolete", confirm: true)
 ```
 
 ## 项目结构
@@ -175,18 +209,28 @@ src/
 │   ├── detect.ts         — 错误检测引擎（HTML + 浏览器 + 摘要）
 │   ├── rules.ts          — 内置和自定义检测规则
 │   └── reporter.ts       — 验证报告格式化（JSON/Markdown）
-├── tools/                — MCP 工具处理器（每个工具一个文件）
-│   ├── register.ts       — 工具注册与路由
-│   ├── read-tool.ts      — wiki_read
-│   ├── edit-tool.ts      — wiki_edit
-│   ├── parse-tool.ts     — wiki_parse
-│   ├── validate-tool.ts  — wiki_validate
-│   ├── browser-tool.ts   — wiki_browser_capture
-│   ├── search-tool.ts    — wiki_search
-│   ├── smw-tool.ts       — wiki_smw_query
-│   ├── diff-tool.ts      — wiki_diff
-│   ├── history-tool.ts   — wiki_history
-│   └── revert-tool.ts    — wiki_revert
+├── tools/                    — MCP 工具处理器（每个工具一个文件）
+│   ├── register.ts           — 工具注册与路由
+│   ├── read-tool.ts          — wiki_read
+│   ├── batch-read-tool.ts    — wiki_batch_read
+│   ├── edit-tool.ts          — wiki_edit
+│   ├── parse-tool.ts         — wiki_parse
+│   ├── validate-tool.ts      — wiki_validate
+│   ├── autofix-tool.ts       — wiki_autofix
+│   ├── browser-tool.ts       — wiki_browser_capture
+│   ├── search-tool.ts        — wiki_search
+│   ├── smw-tool.ts           — wiki_smw_query
+│   ├── diff-tool.ts          — wiki_diff
+│   ├── history-tool.ts       — wiki_history
+│   ├── revert-tool.ts        — wiki_revert
+│   ├── get-revision-tool.ts  — wiki_get_revision
+│   ├── recent-changes-tool.ts — wiki_recent_changes
+│   ├── category-members-tool.ts — wiki_category_members
+│   ├── get-file-tool.ts      — wiki_get_file
+│   ├── upload-file-tool.ts   — wiki_upload_file
+│   ├── delete-page-tool.ts   — wiki_delete_page
+│   ├── undelete-page-tool.ts — wiki_undelete_page
+│   └── list-wikis-tool.ts    — wiki_list_wikis
 ├── safety/
 │   ├── sandbox.ts        — 沙箱页面管理器
 │   ├── backup.ts         — 编辑前自动备份
